@@ -1,6 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+
 import { FaPlus, FaUserPlus, FaExchangeAlt } from 'react-icons/fa';
 import TaskTable from './TaskTable.jsx';
 import Button from "../../elements/Button";
@@ -18,6 +19,9 @@ const TaskList = () => {
     //     { id: 3, taskCode: "T003", taskName: "Testing", status: "In Progress", isCompleted: false, deadline: "2025-03-05", description: "" },
     // ]);
 
+    const API_BASE_URL = process.env.REACT_APP_BASE_URL;
+    console.log(API_BASE_URL)
+
     const [tasks, setTasks] = useState([]);
 
     useEffect(() => {
@@ -26,7 +30,7 @@ const TaskList = () => {
 
     const fetchTasks = async () => {
         try {
-            const response = await axios.get('http://localhost:8080/api/tasks');  // Replace with your Spring Boot API endpoint
+            const response = await axios.get(`${API_BASE_URL}/api/tasks`);  // Replace with your Spring Boot API endpoint
             setTasks(response.data);
         } catch (error) {
             console.error('Error fetching tasks:', error);
@@ -69,7 +73,7 @@ const TaskList = () => {
 
     const handleDelete = async (task) => {
         try {
-            await axios.delete(`http://localhost:8080/api/tasks/${task.id}`);  // Replace with your Spring Boot API endpoint
+            await axios.delete(`${API_BASE_URL}/api/tasks/${task.id}`);  // Replace with your Spring Boot API endpoint
             setTasks(tasks.filter((t) => t.id !== task.id));
             fetchTasks();
         } catch (error) {
@@ -112,14 +116,14 @@ const TaskList = () => {
         try {
             if (currentTask) {
                 // Edit existing task
-                await axios.put(`http://localhost:8080/api/tasks/${currentTask.id}`, taskData);  // Replace with your Spring Boot API endpoint
+                await axios.put(`${API_BASE_URL}/api/tasks/${currentTask.id}`, taskData);  // Replace with your Spring Boot API endpoint
                 setTasks(tasks.map((task) =>
                     task.id === currentTask.id ? { ...task, ...taskData } : task
                 ));
                 fetchTasks();
             } else {
                 // Add new task
-                const response = await axios.post('http://localhost:8080/api/tasks', taskData);  // Replace with your Spring Boot API endpoint
+                const response = await axios.post(`${API_BASE_URL}/api/tasks`, taskData);  // Replace with your Spring Boot API endpoint
                 setTasks([...tasks, response.data]);
                 fetchTasks();
             }
@@ -151,7 +155,7 @@ const TaskList = () => {
                 status: taskToUpdate.completed ? 'In Progress' : 'Completed',
                 statusCode: taskToUpdate.completed ? '02' : '03' 
             };
-            await axios.put(`http://localhost:8080/api/tasks/${taskId}`, updatedTask);  // Replace with your Spring Boot API endpoint
+            await axios.put(`${API_BASE_URL}/api/tasks/${taskId}`, updatedTask);  // Replace with your Spring Boot API endpoint
             setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
         } catch (error) {
             console.error('Error updating task status:', error);

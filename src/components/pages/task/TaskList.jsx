@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 import { FaPlus, FaUserPlus, FaExchangeAlt } from 'react-icons/fa';
+import { showToast, CustomToastContainer } from "../../utils/CustomToast";
+import CustomAlert from "../../utils/CustomAlert.jsx";
+import CustomConfirmationAlert from "../../utils/CustomConfirmationAlert.jsx";
+
 import TaskTable from './TaskTable.jsx';
 import Button from "../../elements/Button";
 import Modal from "../../elements/Modal";
@@ -20,7 +24,7 @@ const TaskList = () => {
     // ]);
 
     const API_BASE_URL = process.env.REACT_APP_BASE_URL;
-    console.log(API_BASE_URL)
+    // console.log(API_BASE_URL)
 
     const [tasks, setTasks] = useState([]);
 
@@ -73,8 +77,34 @@ const TaskList = () => {
 
     const handleDelete = async (task) => {
         try {
-            await axios.delete(`${API_BASE_URL}/api/tasks/${task.id}`);  // Replace with your Spring Boot API endpoint
-            setTasks(tasks.filter((t) => t.id !== task.id));
+            CustomConfirmationAlert({
+                title: "Delete Confirmation",
+                text: "Are you sure you want to delete this item?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete it!",
+                cancelButtonText: "No, cancel",
+                onConfirm: async () => {
+                    const response = await axios.delete(`${API_BASE_URL}/api/tasks/${task.id}`);  // Replace with your Spring Boot API endpoint
+                    setTasks(tasks.filter((t) => t.id !== task.id));
+                    if(response.status == 204){
+                        CustomAlert({
+                            title: "Success",
+                            text: "Task Deleted Successfully",
+                            icon: "success",
+                            onConfirm: () => console.log("Task Deleted!"),
+                        });
+                    } else {
+                        CustomAlert({
+                            title: "Failed!",
+                            text: "Task Deletion failed",
+                            icon: "error",
+                            onConfirm: () => console.log("Task Deletion Failed!"),
+                        });
+                    }
+                },
+                onCancel: () => console.log("Action cancelled!"),
+            });
             fetchTasks();
         } catch (error) {
             console.error('Error deleting task:', error);
@@ -116,15 +146,47 @@ const TaskList = () => {
         try {
             if (currentTask) {
                 // Edit existing task
-                await axios.put(`${API_BASE_URL}/api/tasks/${currentTask.id}`, taskData);  // Replace with your Spring Boot API endpoint
+                const response = await axios.put(`${API_BASE_URL}/api/tasks/${currentTask.id}`, taskData);  // Replace with your Spring Boot API endpoint
                 setTasks(tasks.map((task) =>
                     task.id === currentTask.id ? { ...task, ...taskData } : task
                 ));
+                if(response.status == 200){
+                    CustomAlert({
+                        title: "Success",
+                        text: "Task Updated Successfully",
+                        icon: "success",
+                        onConfirm: () => console.log("Task Updated!"),
+                    });
+                } else {
+                    CustomAlert({
+                        title: "Failed!",
+                        text: "Task Update failed",
+                        icon: "error",
+                        onConfirm: () => console.log("Task Update Failed!"),
+                    });
+                }
                 fetchTasks();
             } else {
                 // Add new task
                 const response = await axios.post(`${API_BASE_URL}/api/tasks`, taskData);  // Replace with your Spring Boot API endpoint
                 setTasks([...tasks, response.data]);
+                if(response.status == 201){
+                    CustomAlert({
+                        title: "Success",
+                        text: "Task Saved Successfully",
+                        icon: "success",
+                        confirmButtonText: "Ok",
+                        onConfirm: () => console.log("Task Saved!"),
+                    });
+                } else {
+                    CustomAlert({
+                        title: "Failed!",
+                        text: "Task Saving failed",
+                        icon: "error",
+                        confirmButtonText: "Ok",
+                        onConfirm: () => console.log("Task Saving Failed!"),
+                    });
+                }
                 fetchTasks();
             }
             handleModalClose();
@@ -155,8 +217,25 @@ const TaskList = () => {
                 status: taskToUpdate.completed ? 'In Progress' : 'Completed',
                 statusCode: taskToUpdate.completed ? '02' : '03' 
             };
-            await axios.put(`${API_BASE_URL}/api/tasks/${taskId}`, updatedTask);  // Replace with your Spring Boot API endpoint
+            const response = await axios.put(`${API_BASE_URL}/api/tasks/${taskId}`, updatedTask);  // Replace with your Spring Boot API endpoint
             setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
+            // debugger
+
+            response.status == 200 ? updatedTask.statusCode == '02' ?
+            showToast({
+                type: "success",
+                message: "Task " + updatedTask.taskCode + " In Progress!",
+                position: "top-right",
+            }) : showToast({
+                type: "success",
+                message: "Task " + updatedTask.taskCode + " Completed!",
+                position: "top-right",
+            }) : showToast({
+                type: "error",
+                message: "Task " + updatedTask.taskCode + " status update failed!",
+                position: "top-right",
+            });
+
         } catch (error) {
             console.error('Error updating task status:', error);
         }
@@ -191,16 +270,16 @@ const TaskList = () => {
                     onChange={(e) => setTaskName(e.target.value)}
                     placeholder="Enter Task Name"
                 />
+                <DatePicker
+                    label="Deadline"
+                    value={taskDeadline}
+                    onChange={(e) => setTaskDeadline(e.target.value)}
+                />
                 <TextArea
                     label="Task Description"
                     value={taskDescription}
                     onChange={(e) => setTaskDescription(e.target.value)}
                     placeholder="Enter Task Description"
-                />
-                <DatePicker
-                    label="Deadline"
-                    value={taskDeadline}
-                    onChange={(e) => setTaskDeadline(e.target.value)}
                 />
                 <div className="flex items-center justify-center">
                     <Button 

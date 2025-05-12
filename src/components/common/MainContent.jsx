@@ -8,7 +8,7 @@ const MainContent = () => {
             <Main/>
             <CustomToastContainer />
         </main>
-    );
+    ); 
 };
 
 export default MainContent;
